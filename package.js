@@ -8,6 +8,7 @@ Package.describe({
 });
 
 Package.onUse(function(api) {
+  api.versionsFrom('1.2');
   api.use('ecmascript');
 
   if(!api.addAssets) {
@@ -18,7 +19,7 @@ Package.onUse(function(api) {
 
   api.use('templating');
   api.use('aldeed:autoform@4.0.0 || 5.0.0');
-  api.use('fourseven:scss');
+  api.use('fourseven:scss@3.1.1');
 
   api.use(['underscore', 'reactive-var'], 'client');
 
