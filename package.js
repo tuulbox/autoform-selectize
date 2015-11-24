@@ -1,34 +1,35 @@
 'use strict';
 
 Package.describe({
-    name: 'vazco:universe-autoform-select',
-    summary: 'Custom "afUniverseSelect" input type for AutoForm, with the appearance as selectize',
-    version: '0.1.15',
-    git: 'https://github.com/vazco/meteor-universe-autoform-select.git'
+  name: 'tuul:autoform-selectize',
+  summary: 'Fork of vazco:universe-autoform-select with better control over css and some bug fixes',
+  version: '0.1.16',
+  git: 'https://github.com/tuulbox/autoform-selectize'
 });
 
 Package.onUse(function(api) {
-    api.versionsFrom('1.0.4.2');
+  api.use('ecmascript');
 
-    if(!api.addAssets) {
-        api.addAssets = function(files, platform){
-            api.addFiles(files, platform, {isAsset: true})
-        };
-    }
+  if(!api.addAssets) {
+    api.addAssets = function(files, platform){
+      api.addFiles(files, platform, {isAsset: true})
+    };
+  }
 
-    api.use('templating');
-    api.use('aldeed:autoform@4.0.0 || 5.0.0');
+  api.use('templating');
+  api.use('aldeed:autoform@4.0.0 || 5.0.0');
+  api.use('fourseven:scss');
 
-    api.use(['underscore', 'reactive-var'], 'client');
+  api.use(['underscore', 'reactive-var'], 'client');
 
-    api.addFiles('vendor/speakingurl.min.js', 'client');
+  api.addFiles('vendor/speakingurl.min.js', 'client');
 
-    api.addFiles([
-        'universe-autoform-select.html',
-        'universe-autoform-select.js',
-        'stylesheets/selectize.default.css',
-        'stylesheets/universe-autoform-select.css'
-    ], 'client');
+  api.addFiles([
+    'universe-autoform-select.html',
+    'universe-autoform-select.js',
+    'stylesheets/_selectize.default.scss',
+    'stylesheets/_universe-autoform-select.scss'
+  ], 'client');
 
-    api.addAssets('img/loading.gif', 'client');
+  api.addAssets('img/loading.gif', 'client');
 });
