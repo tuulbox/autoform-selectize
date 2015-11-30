@@ -160,11 +160,6 @@ Template.afUniverseSelect.helpers({
       }
     });
 
-    // Height adjustment after adding items to the template
-    Meteor.defer(function () {
-      _universeSelectOnChangedItems(template);
-    });
-
     return items;
   },
   isLoading() {
@@ -375,7 +370,6 @@ Template.afUniverseSelect.events({
 var _universeSelectOnFocus = function (template) {
   $(template.find('.js-selectize-dropdown')).stop(true, true).addClass('is-active');
   $(template.find('.selectize-input')).addClass('focus input-active dropdown-active');
-  _universeSelectOnChangedItems(template);
 };
 
 var _universeSelectOnBlur = function (e, template) {
@@ -388,14 +382,6 @@ var _universeSelectOnBlur = function (e, template) {
 
   $selectizeDropdown.stop(true, true).removeClass('is-active');
   $selectizeInput.removeClass('focus input-active dropdown-active');
-};
-
-var _universeSelectOnChangedItems = function (template) {
-  var heightInput = $(template.find('.selectize-input')).outerHeight();
-
-  $(template.find('.selectize-dropdown')).css({
-    top: heightInput
-  });
 };
 
 
