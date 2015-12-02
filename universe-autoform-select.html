@@ -19,12 +19,6 @@
           <a href="#" class="remove" tabindex="-1" title="Remove">×</a>
           {{/if}}
         </div>
-      {{else}}
-        {{#if getPlaceholder}}
-          <div class="universe-autoform-select-placeholder">
-            {{getPlaceholder}}
-          </div>
-        {{/if}}
       {{/each}}
       <input type="text" autocomplete="off" tabindex="">
     </div>
@@ -36,6 +30,8 @@
           <div data-value={{value}} data-selectable class="option">
             {{label}}
           </div>
+        {{else}}
+          <p>Begin typing to search...</p>
         {{/each}}
         {{#if atts.create}}
           <div data-selectable="" class="create" style="display:none;">
