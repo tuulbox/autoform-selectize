@@ -498,12 +498,10 @@ var _getOptionsFromMethod = function (searchText, values, template) {
         return;
       }
 
-      items_selected.push({
-        label: obj.label,
-        value: obj.value,
+      items_selected.push(_.extend({}, obj, {
         selected: _.indexOf(values, obj.value) !== -1,
         visible: true
-      });
+      }));
     });
 
     template.universeSelect.items.set(items_selected);
