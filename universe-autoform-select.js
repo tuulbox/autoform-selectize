@@ -123,6 +123,10 @@ Template.afUniverseSelect.onRendered(function () {
 
 
 Template.afUniverseSelect.helpers({
+  getLabelView: function() {
+    var template = Template.instance();
+    return template.data.atts.itemView || 'afUniverseSelect_label';
+  },
   optionAtts: function afSelectOptionAtts() {
     var item = this;
     var atts = {
