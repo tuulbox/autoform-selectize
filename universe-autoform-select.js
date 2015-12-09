@@ -53,7 +53,6 @@ Template.afUniverseSelect.onCreated(function () {
   template.universeSelect.items = new ReactiveVar();
   template.universeSelect.values = new ReactiveVar();
   template.universeSelect.reactive = new ReactiveVar(true);
-  template.universeSelect.blurTimeoutId = new ReactiveVar();
   template.universeSelect.loading = new ReactiveVar(false);
 });
 
@@ -197,7 +196,7 @@ Template.afUniverseSelect.events({
 
     _saveValues(template, values);
   },
-  'click .selectize-dropdown-content > div:not(.create)': function (e, template) {
+  'mousedown .selectize-dropdown-content > div:not(.create)': function (e, template) {
     e.preventDefault();
     _checkDisabled(template);
 
@@ -295,11 +294,6 @@ Template.afUniverseSelect.events({
   'focus input': function (e, template) {
     _checkDisabled(template);
 
-    var timeoutId = template.universeSelect.blurTimeoutId.get();
-
-    if (timeoutId) {
-      Meteor.clearTimeout(timeoutId);
-    }
 
     _universeSelectOnFocus(template);
   },
@@ -313,11 +307,7 @@ Template.afUniverseSelect.events({
   'blur input': function (e, template) {
     _checkDisabled(template);
 
-    var timeoutId = Meteor.setTimeout(function () {
-      _universeSelectOnBlur(e, template);
-    }, 500);
-
-    template.universeSelect.blurTimeoutId.set(timeoutId);
+    _universeSelectOnBlur(e, template);
   },
   'click .create': function (e, template) {
     _checkDisabled(template);
