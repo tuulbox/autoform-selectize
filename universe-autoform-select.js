@@ -196,7 +196,7 @@ Template.afUniverseSelect.events({
 
     _saveValues(template, values);
   },
-  'mousedown .selectize-dropdown-content > div:not(.create)': function (e, template) {
+  'mousedown .selectize-dropdown-content > div:not(.create), touchstart .selectize-dropdown-content > div:not(.create)': function (e, template) {
     e.preventDefault();
     _checkDisabled(template);
 
