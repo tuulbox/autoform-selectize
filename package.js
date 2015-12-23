@@ -3,7 +3,7 @@
 Package.describe({
   name: 'tuul:autoform-selectize',
   summary: 'Fork of vazco:universe-autoform-select with better control over css and some bug fixes',
-  version: '0.1.20',
+  version: '0.1.20_1',
   git: 'https://github.com/tuulbox/autoform-selectize'
 });
 

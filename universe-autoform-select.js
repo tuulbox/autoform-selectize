@@ -126,6 +126,11 @@ Template.afUniverseSelect.helpers({
     var template = Template.instance();
     return template.data.atts.itemView || 'afUniverseSelect_label';
   },
+  atts: function() {
+    let atts = _.clone(this.atts);
+    delete atts.optionsMethodParams;
+    return atts;
+  },
   optionAtts: function afSelectOptionAtts() {
     var item = this;
     var atts = {
