@@ -1,7 +1,3 @@
-<template name="afUniverseSelect_label">
-  {{label}}
-</template>
-
 <template name="afUniverseSelect">
   <div class="selectize-control universe-autoform-select {{atts.multipleClass}} {{atts.remove_button}} {{#if isLoading}}loading{{/if}}">
 
@@ -30,11 +26,13 @@
     <div class="selectize-dropdown js-selectize-dropdown">
       <div class="selectize-dropdown-content">
         {{#each getItemsUnselected}}
-          <div data-value={{value}} data-selectable class="option">
-            {{>Template.dynamic template=getLabelView data=this}}
-          </div>
-        {{else}}
-          <p>Begin typing to search...</p>
+          {{#if value}}
+            <div data-value={{value}} data-selectable class="option {{initial}}">
+              {{>Template.dynamic template=getLabelView data=this}}
+            </div>
+          {{else}}
+            <p>{{content}}</p>
+          {{/if}}
         {{/each}}
         {{#if atts.create}}
           <div data-selectable="" class="create" style="display:none;">
@@ -43,5 +41,6 @@
         {{/if}}
       </div>
     </div>
+
   </div>
 </template>

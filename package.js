@@ -28,6 +28,7 @@ Package.onUse(function(api) {
   api.addFiles([
     'universe-autoform-select.html',
     'universe-autoform-select.js',
+    'universe-autoform-label.html',
     'stylesheets/_selectize.default.scss',
     'stylesheets/_universe-autoform-select.scss'
   ], 'client');

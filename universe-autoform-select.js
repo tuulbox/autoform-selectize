@@ -54,10 +54,12 @@ Template.afUniverseSelect.onCreated(function () {
   template.universeSelect.values = new ReactiveVar();
   template.universeSelect.reactive = new ReactiveVar(true);
   template.universeSelect.loading = new ReactiveVar(false);
+  template.universeSelect.hoveredItem = new ReactiveVar(null);
+  template.universeSelect.value = new ReactiveVar('');
 });
 
-Template.afUniverseSelect.onRendered(function () {
-  var template = this;
+Template.afUniverseSelect.onRendered(() => {
+  var template = Template.instance();
   var prevVal;
   var optionsMethod = template.data.atts.optionsMethod;
 
@@ -122,64 +124,43 @@ Template.afUniverseSelect.onRendered(function () {
 
 
 Template.afUniverseSelect.helpers({
-  getLabelView: function() {
-    var template = Template.instance();
-    return template.data.atts.itemView || 'afUniverseSelect_label';
+  atts: () => _.omit(_.clone(Template.instance().data.atts), 'optionsMethodParams'),
+  optionAtts() {
+    return {value: this.value};
   },
-  atts: function() {
-    let atts = _.clone(this.atts);
-    delete atts.optionsMethodParams;
-    return atts;
-  },
-  optionAtts: function afSelectOptionAtts() {
-    var item = this;
-    var atts = {
-      value: item.value
-    };
+  getItems: () => Template.instance().universeSelect.items.get(),
+  getItemsSelected: () => {
+    let items = [];
 
-    return atts;
-  },
-  getItems() {
-    var template = Template.instance();
-    var items = template.universeSelect.items.get();
-
-    return items;
-  },
-  getItemsSelected() {
-    var template = Template.instance();
-    var selectItems = template.universeSelect.items.get();
-    var items = [];
-
-    _.each(selectItems, function (item) {
-      if (item.selected) {
-        items.push(item);
-      }
+    _.each(Template.instance().universeSelect.items.get(), (item) => {
+      item.selected ? items.push(item) : '';
     });
 
     return items;
   },
-  getItemsUnselected() {
-    var template = Template.instance();
-    var items = [];
+  isLoading: () => Template.instance().universeSelect.loading.get(),
+  getPlaceholder: () => Template.instance().data.atts.placeholder,
+  isDisabled: () => Template.instance().data.atts.uniDisabled,
+  getLabelView: () => Template.instance().data.atts.itemView ? Template.instance().data.atts.itemView : 'afUniverseSelect_label',
+  getItemsUnselected: () => {
+    let items = [];
 
-    _.each(template.universeSelect.items.get(), function (item) {
+    _.each(Template.instance().universeSelect.items.get(), (item) => {
       if (!item.selected && item.visible) {
         items.push(item);
       }
     });
 
+    if (items.length >= 1) {
+      items[0].initial = 'is-focused';
+    } else if (Template.instance().universeSelect.value.get().length >= 1) {
+      return [{content: `no result for '${Template.instance().universeSelect.value.get()}'`}]
+    } else {
+      return [{content: 'begin typing to search...'}]
+    }
+
     return items;
   },
-  isLoading() {
-    var template = Template.instance();
-    return template.universeSelect.loading.get();
-  },
-  getPlaceholder() {
-    return this.atts.placeholder;
-  },
-  isDisabled() {
-    return this.atts.uniDisabled;
-  }
 });
 
 var _checkDisabled = function (template) {
@@ -189,11 +170,11 @@ var _checkDisabled = function (template) {
 };
 
 Template.afUniverseSelect.events({
-  'click .remove': function (e, template) {
-    e.preventDefault();
+  'click .remove' (event, template) {
+    event.preventDefault();
     _checkDisabled(template);
 
-    var $el = $(e.target);
+    var $el = $(event.target);
     var val = $el.parent().attr('data-value');
     var values = template.universeSelect.values.get();
 
@@ -201,11 +182,11 @@ Template.afUniverseSelect.events({
 
     _saveValues(template, values);
   },
-  'mousedown .selectize-dropdown-content > div:not(.create), touchstart .selectize-dropdown-content > div:not(.create)': function (e, template) {
-    e.preventDefault();
+  'mousedown .selectize-dropdown-content > div:not(.create), touchstart .selectize-dropdown-content > div:not(.create)' (event, template) {
+    event.preventDefault();
     _checkDisabled(template);
 
-    var $el = $(e.target);
+    var $el = $(event.target);
     var val = $el.attr('data-value');
     var values = template.universeSelect.values.get();
 
@@ -227,7 +208,7 @@ Template.afUniverseSelect.events({
       $(template.find('.js-selectize-dropdown')).stop(true, true).removeClass('is-active');
     }
   },
-  'click .selectize-input, click .selectize-label': function (e, template) {
+  'click .selectize-input, click .selectize-label' (event, template) {
     _checkDisabled(template);
 
     var $input = $(template.find('input'));
@@ -235,37 +216,82 @@ Template.afUniverseSelect.events({
 
     _getOptionsFromMethod($input.val(), null, template);
   },
-  'keydown input': function (e, template) {
+  'keydown input' (event, template) {
+    if (event.keyCode === 38 || event.keyCode === 40) {
+      event.preventDefault();
+    }
+
     _checkDisabled(template);
 
-    var $el = $(e.target);
+    var $el = $(event.target);
     var values = template.universeSelect.values.get();
     var width = _measureString($el.val(), $el) + 10;
     var $input = $(template.find('input'));
     var $unselectedItems = $(template.findAll('.selectize-dropdown-content > div:not(.create)'));
     var $createItem = $(template.find('.selectize-dropdown-content > div.create'));
+    var activeElement;
+
+    if (template.universeSelect.hoveredItem.get()) {
+      activeElement = template.$(`[data-value="${template.universeSelect.hoveredItem.get()}"]`);
+      activeElement.addClass('not-hovered');
+      template.universeSelect.hoveredItem.set(null);
+    } else if (template.$('.is-focused').length > 0) {
+      activeElement = template.$('.is-focused');
+    } else {
+      activeElement = template.$('[data-selectable]:first');
+    }
 
     $el.width(width);
 
-    switch (e.keyCode) {
+    switch (event.keyCode) {
       case 8: // backspace
         if ($el.val() === '') {
           values.pop();
           _saveValues(template, values);
         }
-
         break;
 
       case 27: // escape
         $input.blur();
         break;
 
+      case 38: // up arrow
+        const prevElement = activeElement.prev();
+
+        if (prevElement.length > 0) {
+          activeElement.removeClass('is-focused');
+          prevElement.addClass('is-focused');
+        } else {
+          activeElement.addClass('is-focused');
+        }
+
+        activeElement = prevElement;
+        break;
+
+      case 40: // down arrow
+        const nextElement = activeElement.next();
+
+        if (nextElement.length > 0) {
+          activeElement.removeClass('is-focused');
+          nextElement.addClass('is-focused');
+        } else {
+          activeElement.addClass('is-focused');
+        }
+
+        activeElement = nextElement;
+        break;
+
       case 13: // enter
-        e.preventDefault();
+        event.preventDefault();
 
         if ($input.val() === '') {
           break;
+        } else if (activeElement.length >= 1) {
+          activeElement.trigger('mousedown');
+          break;
         }
+
+        // not sure if it will hit this ever.
 
         if ($unselectedItems.length === 1) {
           $unselectedItems.first().trigger('click');
@@ -274,15 +300,16 @@ Template.afUniverseSelect.events({
           $createItem.trigger('click');
           $input.val('');
         }
-
         break;
     }
   },
-  'keyup input': function (e, template) {
+  'keyup input' (event, template) {
     _checkDisabled(template);
 
-    var $el = $(e.target);
+    var $el = $(event.target);
     var value = $el.val();
+
+    template.universeSelect.value.set(value);
 
 
     if (value) {
@@ -296,25 +323,25 @@ Template.afUniverseSelect.events({
 
     _getOptionsFromMethod(value, null, template);
   },
-  'focus input': function (e, template) {
+  'focus input'  (event, template) {
     _checkDisabled(template);
 
 
     _universeSelectOnFocus(template);
   },
-  'change input': function(e, template) {
+  'change input' (event, template) {
     _checkDisabled(template);
 
     // prevent non-autoform fields changes from submitting the form when autosave is enabled
-    e.preventDefault();
-    e.stopPropagation();
+    event.preventDefault();
+    event.stopPropagation();
   },
-  'blur input': function (e, template) {
+  'blur input' (event, template) {
     _checkDisabled(template);
 
-    _universeSelectOnBlur(e, template);
+    _universeSelectOnBlur(event, template);
   },
-  'click .create': function (e, template) {
+  'click .create' (event, template) {
     _checkDisabled(template);
 
     var $input = $(template.find('input'));
@@ -360,10 +387,10 @@ Template.afUniverseSelect.events({
 
     $input.val('');
     $(template.find('.create')).hide();
-
-    // We don't have to call _universeSelectOnBlur because 'blur input' is also triggered
-    //_universeSelectOnBlur(e, template);
-  }
+  },
+  'mouseenter [data-selectable]' (event, template) {
+    template.universeSelect.hoveredItem.set(template.$(event.target).attr('data-value'));
+  },
 });
 
 var _universeSelectOnFocus = function (template) {
