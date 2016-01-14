@@ -16,7 +16,7 @@ ddp-common@1.2.2
 ddp-server@1.2.2
 deps@1.0.9
 diff-sequence@1.0.1
-ecmascript@0.1.6
+ecmascript@0.1.5
 ecmascript-runtime@0.2.6
 ejson@1.0.7
 fourseven:scss@3.1.1
@@ -41,7 +41,7 @@ retry@1.0.4
 routepolicy@1.0.6
 spacebars@1.0.7
 spacebars-compiler@1.0.7
-templating@1.1.5
+templating@1.1.4
 templating-tools@1.0.0
 tracker@1.0.9
 tuul:autoform-selectize@0.1.20_1

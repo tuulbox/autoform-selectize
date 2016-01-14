@@ -38,9 +38,11 @@ AutoForm.addInputType('universe-select', {
     }
 
     //autosave option
-    context.atts.autosave = AutoForm.getCurrentDataForForm().autosave || false;
-    context.atts.placeholder = AutoForm.getCurrentDataForForm().placeholder || context.atts.uniPlaceholder || null;
-    context.atts.uniDisabled = !!AutoForm.getCurrentDataForForm().disabled || false;
+    if (AutoForm && typeof AutoForm.getCurrentDataForForm === 'function') {
+      context.atts.autosave = AutoForm.getCurrentDataForForm().autosave || false;
+      context.atts.placeholder = AutoForm.getCurrentDataForForm().placeholder || context.atts.uniPlaceholder || null;
+      context.atts.uniDisabled = !!AutoForm.getCurrentDataForForm().disabled || false;
+    }
 
     return context;
   }
@@ -118,8 +120,15 @@ Template.afUniverseSelect.onRendered(() => {
       }, 0);
     }
 
-    prevVal = values;
-  });
+        prevVal = values;
+    });
+
+    if (AutoForm && typeof AutoForm.getCurrentDataForForm === 'function') {
+        var formId = AutoForm.getCurrentDataForForm().id;
+        $('#' + formId).bind('reset', function () {
+            _saveValues(template, []);
+        });
+    }
 });
 
 
@@ -390,6 +399,10 @@ Template.afUniverseSelect.events({
   },
   'mouseenter [data-selectable]' (event, template) {
     template.universeSelect.hoveredItem.set(template.$(event.target).attr('data-value'));
+  },
+  'mousemove .selectize-dropdown-content' (event, template) {
+    template.$('.is-focused').removeClass('is-focused');
+    template.$('.not-hovered').removeClass('not-hovered');
   },
 });
 
