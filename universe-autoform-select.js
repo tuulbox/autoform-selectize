@@ -248,6 +248,7 @@ Template.afUniverseSelect.events({
       activeElement = template.$('.is-focused');
     } else {
       activeElement = template.$('[data-selectable]:first');
+      activeElement.addClass('is-focused')
     }
 
     $el.width(width);
