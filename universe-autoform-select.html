@@ -31,7 +31,7 @@
               {{>Template.dynamic template=getLabelView data=this}}
             </div>
           {{else}}
-            <p>{{content}}</p>
+            <p class="Selectize__NoValue">{{content}}</p>
           {{/if}}
         {{/each}}
         {{#if atts.create}}
