@@ -268,9 +268,10 @@ Template.afUniverseSelect.events({
       case 38: // up arrow
         const prevElement = activeElement.prev();
 
-        if (prevElement.length > 0) {
+        if (prevElement.length === 1) {
           activeElement.removeClass('is-focused');
           prevElement.addClass('is-focused');
+          _scrollElementInView(prevElement, template.$('.selectize-dropdown-content'), 'up');
         } else {
           activeElement.addClass('is-focused');
         }
@@ -281,9 +282,10 @@ Template.afUniverseSelect.events({
       case 40: // down arrow
         const nextElement = activeElement.next();
 
-        if (nextElement.length > 0) {
+        if (nextElement.length === 1) {
           activeElement.removeClass('is-focused');
           nextElement.addClass('is-focused');
+          _scrollElementInView(nextElement, template.$('.selectize-dropdown-content'), 'down');
         } else {
           activeElement.addClass('is-focused');
         }
@@ -548,4 +550,32 @@ var _getOptionsFromMethod = function (searchText, values, template) {
     template.universeSelect.loading.set(false);
     _setVisibleByValue(searchText, template);
   });
+};
+
+
+var _scrollElementInView = function(element, parent, direction) {
+  const parentRect = parent[0].getBoundingClientRect();
+
+  switch(direction) {
+    case 'up':
+      if (element.prev()) {
+        let prevElement = element.prev().length === 1 ? element.prev() : element;
+
+        const prevElementRect = prevElement[0].getBoundingClientRect();
+        const prevElementOuterHeight = prevElement.outerHeight(true);
+
+        parent.scrollTop((prevElementRect.bottom - parentRect.top) - prevElementOuterHeight + parent.scrollTop());
+      }
+      break;
+    case 'down':
+      if (element.next()) {
+        let nextElement = element.next().length === 1 ? element.next() : element;
+        const nextElementRect = nextElement[0].getBoundingClientRect();
+
+        if (nextElementRect.bottom > parentRect.bottom) {
+          nextElement[0].scrollIntoView();
+        }
+      }
+      break;
+  }
 };
