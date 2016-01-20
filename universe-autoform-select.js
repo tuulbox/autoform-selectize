@@ -211,11 +211,10 @@ Template.afUniverseSelect.events({
     _setVisibleByValue('', template);
 
     if (template.data.atts.multiple) {
-      $(template.find('.js-selectize-dropdown')).stop(true, true).addClass('is-active');
       $(template.find('input')).focus();
-    } else {
-      $(template.find('.js-selectize-dropdown')).stop(true, true).removeClass('is-active');
     }
+
+    $(template.find('.js-selectize-dropdown')).stop(true, true).removeClass('is-active');
   },
   'click .selectize-input, click .selectize-label' (event, template) {
     _checkDisabled(template);
@@ -226,6 +225,9 @@ Template.afUniverseSelect.events({
     _getOptionsFromMethod($input.val(), null, template);
   },
   'keydown input' (event, template) {
+
+    $(template.find('.js-selectize-dropdown')).stop(true, true).addClass('is-active');
+
     if (event.keyCode === 38 || event.keyCode === 40) {
       event.preventDefault();
     }
@@ -570,10 +572,12 @@ var _scrollElementInView = function(element, parent, direction) {
     case 'down':
       if (element.next()) {
         let nextElement = element.next().length === 1 ? element.next() : element;
+
         const nextElementRect = nextElement[0].getBoundingClientRect();
+        const nextElementOuterHeight = nextElement.outerHeight(true);
 
         if (nextElementRect.bottom > parentRect.bottom) {
-          nextElement[0].scrollIntoView();
+          parent.scrollTop((nextElementRect.top - parentRect.bottom) + nextElementOuterHeight + parent.scrollTop());
         }
       }
       break;
