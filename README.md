@@ -31,7 +31,7 @@ $ meteor add aldeed:autoform
 In a Meteor app directory, enter:
 
 ```bash
-$ meteor add vazco:universe-autoform-select
+$ meteor add tuul:autoform-selectize
 ```
 
 ## For use without autoform
