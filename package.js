@@ -26,9 +26,12 @@ Package.onUse(function(api) {
     'universe-autoform-select.html',
     'universe-autoform-select.js',
     'universe-autoform-label.html',
+  ], 'client');
+
+  api.addFiles([
     'stylesheets/_selectize.default.scss',
     'stylesheets/_universe-autoform-select.scss',
-  ], 'client');
+  ], 'client',  {isImport: true});
 
   api.addAssets('img/loading.gif', 'client');
 });

@@ -48,57 +48,220 @@ AutoForm.addInputType('universe-select', {
   }
 });
 
-Template.afUniverseSelect.onCreated(function () {
-  var template = this;
+Template.afUniverseSelect.onCreated(() => {
+  let universeSelect = Template.instance().universeSelect = {};
+  universeSelect.items = new ReactiveVar();
+  universeSelect.values = new ReactiveVar();
+  universeSelect.reactive = new ReactiveVar(true);
+  universeSelect.loading = new ReactiveVar(false);
+  universeSelect.hoveredItem = new ReactiveVar(null);
+  universeSelect.value = new ReactiveVar('');
 
-  template.universeSelect = {};
-  template.universeSelect.items = new ReactiveVar();
-  template.universeSelect.values = new ReactiveVar();
-  template.universeSelect.reactive = new ReactiveVar(true);
-  template.universeSelect.loading = new ReactiveVar(false);
-  template.universeSelect.hoveredItem = new ReactiveVar(null);
-  template.universeSelect.value = new ReactiveVar('');
+
+  // Define all the functions this thing uses:
+
+  universeSelect.checkDisabled = (template) => {
+   if (template.data.atts.uniDisabled) {
+      throw new Meteor.Error('This field is disabled');
+    }
+  };
+
+
+  universeSelect.saveValues = (template, values) => {
+    var items = template.universeSelect.items.get();
+
+    if (!_.isArray(values)) {
+      values = [values];
+    }
+
+    _.each(items, function (item, key) {
+      if (_.indexOf(values, item.value.toString()) !== -1) {
+        item.selected = true;
+      } else {
+        item.selected = false;
+      }
+    });
+
+    template.universeSelect.items.set(items);
+  };
+
+  // from selectize utils https://github.com/brianreavis/selectize.js/blob/master/src/utils.js
+
+  universeSelect.measureString = (str, $parent) => {
+    // FIXME there is a bug with measuring the string and setting the right width. Measures short.
+
+    if (!str) {
+      return 0;
+    }
+
+    let $test = $('<test>').css({
+      position: 'absolute',
+      top: -99999,
+      left: -99999,
+      width: 'auto',
+      padding: 0,
+      whiteSpace: 'pre'
+    }).text(str).appendTo('body');
+
+    let properties = [
+      'letterSpacing',
+      'fontSize',
+      'fontFamily',
+      'fontWeight',
+      'textTransform'
+    ];
+
+    let styles = {};
+    let i;
+    let n;
+
+    for (i = 0, n = properties.length; i < n; i++) {
+      styles[properties[i]] = $parent.css(properties[i]);
+    }
+
+    $test.css(styles);
+
+    let width = $test.width();
+
+    $test.remove();
+
+    return width;
+  };
+
+  universeSelect.setVisibleByValue = (value, template) => {
+    var items = template.universeSelect.items.get();
+
+    _.each(items, function (item) {
+      if (item.label.search(new RegExp(value, 'i')) !== -1) {
+        item.visible = true;
+      } else {
+        item.visible = false;
+      }
+    });
+
+    template.universeSelect.items.set(items);
+  };
+
+  universeSelect.getOptionsFromMethod = (searchText, values, template) => {
+    var optionsMethod = template.data.atts.optionsMethod;
+    var optionsMethodParams = template.data.atts.optionsMethodParams;
+    var searchVal;
+
+    if (!optionsMethod) {
+      return false;
+    }
+
+    searchVal = {
+      searchText: searchText,
+      values: values || [],
+      params: optionsMethodParams || null
+    };
+
+    template.universeSelect.loading.set(true);
+
+    Meteor.call(optionsMethod, searchVal, function (err, res) {
+      var items = template.universeSelect.items.get() || [];
+      var items_selected = [];
+
+      _.each(items, function (item) {
+        if(values && _.indexOf(values, item.value) !== -1){
+          item.selected = true;
+          items_selected.push(item);
+        } else if(values === null && item.selected){
+          items_selected.push(item);
+        }
+      });
+
+      _.each(res, function (obj) {
+        if (_.find(items_selected, function (item) {
+            return item.value === obj.value;
+          })) {
+          return;
+        }
+
+        items_selected.push(_.extend({}, obj, {
+          selected: _.indexOf(values, obj.value) !== -1,
+          visible: true
+        }));
+      });
+
+      template.universeSelect.items.set(items_selected);
+      template.universeSelect.loading.set(false);
+      template.universeSelect.setVisibleByValue(searchText, template);
+    });
+  };
+
+
+  universeSelect.scrollElementInView = (element, parent, direction) => {
+    const parentRect = parent[0].getBoundingClientRect();
+
+    switch(direction) {
+      case 'up':
+      if (element.prev()) {
+        let prevElement = element.prev().length === 1 ? element.prev() : element;
+
+        const prevElementRect = prevElement[0].getBoundingClientRect();
+        const prevElementOuterHeight = prevElement.outerHeight(true);
+
+        parent.scrollTop((prevElementRect.bottom - parentRect.top) - prevElementOuterHeight + parent.scrollTop());
+      }
+      break;
+
+      case 'down':
+      if (element.next()) {
+        let nextElement = element.next().length === 1 ? element.next() : element;
+
+        const nextElementRect = nextElement[0].getBoundingClientRect();
+        const nextElementOuterHeight = nextElement.outerHeight(true);
+
+        if (nextElementRect.bottom > parentRect.bottom) {
+          parent.scrollTop((nextElementRect.top - parentRect.bottom) + nextElementOuterHeight + parent.scrollTop());
+        }
+      }
+      break;
+    }
+  };
 });
 
 Template.afUniverseSelect.onRendered(() => {
-  var template = Template.instance();
-  var prevVal;
-  var optionsMethod = template.data.atts.optionsMethod;
+  const template = Template.instance();
+  let prevVal;
+  let optionsMethod = template.data.atts.optionsMethod;
 
   if (optionsMethod) {
-    template.autorun(function () {
+    template.autorun(() => {
       var data = Template.currentData();
 
-      _getOptionsFromMethod(null, data.value, template);
+      template.universeSelect.getOptionsFromMethod(null, data.value, template);
     });
   } else {
-    template.autorun(function () {
+    template.autorun(() => {
       var data = Template.currentData();
 
-      _.each(data.items, function (item) {
+      _.each(data.items, (item) => {
         item.visible = true;
       });
 
-      if (template.universeSelect.reactive.get()/* && data.atts.autosave*/) {
+      if (template.universeSelect.reactive.get()) {
         template.universeSelect.items.set(data.items);
       }
     });
   }
 
-  template.autorun(function () {
-    var items = template.universeSelect.items.get();
-    var values = [];
-    var values_limit = template.data.atts.values_limit;
+  template.autorun(() => {
+    let items = template.universeSelect.items.get();
+    let values = [];
+    let values_limit = template.data.atts.values_limit;
 
-    _.each(items, function (item) {
+    _.each(items, (item) => {
       if (item.selected) {
         values.push(item.value);
       }
     });
 
     if (values_limit !== undefined && values.length > values_limit) {
-      var values_old = template.universeSelect.values.get();
-      _.each(items, function (item) {
+      let values_old = template.universeSelect.values.get();
+      _.each(items, (item) => {
         if (!_.contains(values_old, item.value)) {
           item.selected = false;
         }
@@ -110,43 +273,35 @@ Template.afUniverseSelect.onRendered(() => {
     template.universeSelect.values.set(values);
   });
 
-  template.autorun(function () {
-    var values = template.universeSelect.values.get();
-    var $select = $(template.find('select'));
+  template.autorun(() => {
+    let values = template.universeSelect.values.get();
+    let $select = template.$('select');
 
     if (!_.isEqual($select.val(), values)) {
-      Meteor.setTimeout(function() {
+      Meteor.setTimeout(() => {
         $select.val(values);
       }, 0);
     }
 
-        prevVal = values;
-    });
+    prevVal = values;
+  });
 
-    if (AutoForm && typeof AutoForm.getCurrentDataForForm === 'function') {
-        var formId = AutoForm.getCurrentDataForForm().id;
-        $('#' + formId).bind('reset', function () {
-            _saveValues(template, []);
-        });
-    }
+  if (AutoForm && typeof AutoForm.getCurrentDataForForm === 'function') {
+    let formId = AutoForm.getCurrentDataForForm().id;
+    $('#' + formId).bind('reset', () => {
+      template.universeSelect.saveValues(template, []);
+    });
+  }
 });
 
 
 Template.afUniverseSelect.helpers({
   atts: () => _.omit(_.clone(Template.instance().data.atts), 'optionsMethodParams'),
   optionAtts() {
-    return {value: this.value};
+    return {value: this.value}
   },
   getItems: () => Template.instance().universeSelect.items.get(),
-  getItemsSelected: () => {
-    let items = [];
-
-    _.each(Template.instance().universeSelect.items.get(), (item) => {
-      item.selected ? items.push(item) : '';
-    });
-
-    return items;
-  },
+  getItemsSelected: () => Template.instance().universeSelect.items.get() ? Template.instance().universeSelect.items.get().filter(item => item.selected) : [],
   isLoading: () => Template.instance().universeSelect.loading.get(),
   getPlaceholder: () => Template.instance().data.atts.placeholder,
   isDisabled: () => Template.instance().data.atts.uniDisabled,
@@ -172,16 +327,11 @@ Template.afUniverseSelect.helpers({
   },
 });
 
-var _checkDisabled = function (template) {
-  if (template.data.atts.uniDisabled) {
-    throw new Meteor.Error('This field is disabled');
-  }
-};
 
 Template.afUniverseSelect.events({
   'click .remove' (event, template) {
     event.preventDefault();
-    _checkDisabled(template);
+    template.universeSelect.checkDisabled(template);
 
     var $el = $(event.target);
     var val = $el.parent().attr('data-value');
@@ -189,11 +339,11 @@ Template.afUniverseSelect.events({
 
     values = _.without(values, val);
 
-    _saveValues(template, values);
+    template.universeSelect.saveValues(template, values);
   },
   'mousedown .selectize-dropdown-content > div:not(.create), touchstart .selectize-dropdown-content > div:not(.create)' (event, template) {
     event.preventDefault();
-    _checkDisabled(template);
+    template.universeSelect.checkDisabled(template);
 
     var $el = $(event.target);
     var val = $el.attr('data-value');
@@ -205,24 +355,24 @@ Template.afUniverseSelect.events({
       values = val;
     }
 
-    _saveValues(template, values);
+    template.universeSelect.saveValues(template, values);
 
-    $(template.find('input')).val('');
-    _setVisibleByValue('', template);
+    template.$('input').val('');
+    template.universeSelect.setVisibleByValue('', template);
 
     if (template.data.atts.multiple) {
       $(template.find('input')).focus();
     }
 
-    $(template.find('.js-selectize-dropdown')).stop(true, true).removeClass('is-active');
+    template.$('.js-selectize-dropdown').stop(true, true).removeClass('is-active');
   },
   'click .selectize-input, click .selectize-label' (event, template) {
-    _checkDisabled(template);
+    template.universeSelect.checkDisabled(template);
 
     var $input = $(template.find('input'));
     $input.focus();
 
-    _getOptionsFromMethod($input.val(), null, template);
+    template.universeSelect.getOptionsFromMethod($input.val(), null, template);
   },
   'keydown input' (event, template) {
 
@@ -232,11 +382,11 @@ Template.afUniverseSelect.events({
       event.preventDefault();
     }
 
-    _checkDisabled(template);
+    template.universeSelect.checkDisabled(template);
 
     var $el = $(event.target);
     var values = template.universeSelect.values.get();
-    var width = _measureString($el.val(), $el) + 10;
+    var width = template.universeSelect.measureString($el.val(), $el) + 10;
     var $input = $(template.find('input'));
     var $unselectedItems = $(template.findAll('.selectize-dropdown-content > div:not(.create)'));
     var $createItem = $(template.find('.selectize-dropdown-content > div.create'));
@@ -259,7 +409,7 @@ Template.afUniverseSelect.events({
       case 8: // backspace
         if ($el.val() === '') {
           values.pop();
-          _saveValues(template, values);
+          template.universeSelect.saveValues(template, values);
         }
         break;
 
@@ -273,7 +423,7 @@ Template.afUniverseSelect.events({
         if (prevElement.length === 1) {
           activeElement.removeClass('is-focused');
           prevElement.addClass('is-focused');
-          _scrollElementInView(prevElement, template.$('.selectize-dropdown-content'), 'up');
+          template.universeSelect.scrollElementInView(prevElement, template.$('.selectize-dropdown-content'), 'up');
         } else {
           activeElement.addClass('is-focused');
         }
@@ -287,7 +437,7 @@ Template.afUniverseSelect.events({
         if (nextElement.length === 1) {
           activeElement.removeClass('is-focused');
           nextElement.addClass('is-focused');
-          _scrollElementInView(nextElement, template.$('.selectize-dropdown-content'), 'down');
+          template.universeSelect.scrollElementInView(nextElement, template.$('.selectize-dropdown-content'), 'down');
         } else {
           activeElement.addClass('is-focused');
         }
@@ -318,7 +468,7 @@ Template.afUniverseSelect.events({
     }
   },
   'keyup input' (event, template) {
-    _checkDisabled(template);
+    template.universeSelect.checkDisabled(template);
 
     var $el = $(event.target);
     var value = $el.val();
@@ -333,32 +483,38 @@ Template.afUniverseSelect.events({
       $(template.find('.create')).hide();
     }
 
-    _setVisibleByValue(value, template);
+    template.universeSelect.setVisibleByValue(value, template);
 
-    _getOptionsFromMethod(value, null, template);
+    template.universeSelect.getOptionsFromMethod(value, null, template);
   },
-  'focus input'  (event, template) {
-    _checkDisabled(template);
+  'focus input' (event, template) {
+    template.universeSelect.checkDisabled(template);
 
-
-    _universeSelectOnFocus(template);
+    template.$('.js-selectize-dropdown').stop(true, true).addClass('is-active');
+    template.$('.selectize-input').addClass('focus input-active dropdown-active');
   },
   'change input' (event, template) {
-    _checkDisabled(template);
+    template.universeSelect.checkDisabled(template);
 
     // prevent non-autoform fields changes from submitting the form when autosave is enabled
     event.preventDefault();
     event.stopPropagation();
   },
   'blur input' (event, template) {
-    _checkDisabled(template);
+    template.universeSelect.checkDisabled(template);
 
-    _universeSelectOnBlur(event, template);
+    let $select = template.$('select');
+    let values = template.universeSelect.values.get();
+    $select.val(values);
+    $select.change(); //save value on blur
+
+    template.$('.js-selectize-dropdown').stop(true, true).removeClass('is-active');
+    template.$('.selectize-input').removeClass('focus input-active dropdown-active');
   },
   'click .create' (event, template) {
-    _checkDisabled(template);
+    template.universeSelect.checkDisabled(template);
 
-    var $input = $(template.find('input'));
+    var $input = template.$('input');
     var items = template.universeSelect.items.get();
     var values = template.universeSelect.values.get();
     var label = $input.val();
@@ -377,7 +533,7 @@ Template.afUniverseSelect.events({
         values = value;
       }
 
-      _saveValues(template, values);
+      template.universeSelect.saveValues(template, values);
     };
 
     if (_.indexOf(values, value) === -1) {
@@ -410,176 +566,3 @@ Template.afUniverseSelect.events({
     template.$('.not-hovered').removeClass('not-hovered');
   },
 });
-
-var _universeSelectOnFocus = function (template) {
-  $(template.find('.js-selectize-dropdown')).stop(true, true).addClass('is-active');
-  $(template.find('.selectize-input')).addClass('focus input-active dropdown-active');
-};
-
-var _universeSelectOnBlur = function (e, template) {
-  var $select = $(template.find('select'));
-  var $selectizeInput = $(template.find('.selectize-input'));
-  var $selectizeDropdown = $(template.find('.js-selectize-dropdown'));
-  var values = template.universeSelect.values.get();
-  $select.val(values);
-  $select.change(); //save value on blur
-
-  $selectizeDropdown.stop(true, true).removeClass('is-active');
-  $selectizeInput.removeClass('focus input-active dropdown-active');
-};
-
-
-var _saveValues = function (template, values) {
-  var items = template.universeSelect.items.get();
-
-  if (!_.isArray(values)) {
-    values = [values];
-  }
-
-  _.each(items, function (item, key) {
-    if (_.indexOf(values, item.value.toString()) !== -1) {
-      item.selected = true;
-    } else {
-      item.selected = false;
-    }
-  });
-
-  template.universeSelect.items.set(items);
-};
-
-// from selectize utils https://github.com/brianreavis/selectize.js/blob/master/src/utils.js
-
-var _measureString = function (str, $parent) {
-  if (!str) {
-    return 0;
-  }
-
-  var $test = $('<test>').css({
-    position: 'absolute',
-    top: -99999,
-    left: -99999,
-    width: 'auto',
-    padding: 0,
-    whiteSpace: 'pre'
-  }).text(str).appendTo('body');
-
-  _transferStyles($parent, $test, [
-    'letterSpacing',
-    'fontSize',
-    'fontFamily',
-    'fontWeight',
-    'textTransform'
-  ]);
-
-  var width = $test.width();
-  $test.remove();
-
-  return width;
-};
-
-var _transferStyles = function ($from, $to, properties) {
-  var i, n, styles = {};
-
-  if (properties) {
-    for (i = 0, n = properties.length; i < n; i++) {
-      styles[properties[i]] = $from.css(properties[i]);
-    }
-  } else {
-    styles = $from.css();
-  }
-
-  $to.css(styles);
-};
-
-var _setVisibleByValue = function (value, template) {
-  var items = template.universeSelect.items.get();
-
-  _.each(items, function (item) {
-    if (item.label.search(new RegExp(value, 'i')) !== -1) {
-      item.visible = true;
-    } else {
-      item.visible = false;
-    }
-  });
-
-  template.universeSelect.items.set(items);
-};
-
-var _getOptionsFromMethod = function (searchText, values, template) {
-  var optionsMethod = template.data.atts.optionsMethod;
-  var optionsMethodParams = template.data.atts.optionsMethodParams;
-  var searchVal;
-
-  if (!optionsMethod) {
-    return false;
-  }
-
-  searchVal = {
-    searchText: searchText,
-    values: values || [],
-    params: optionsMethodParams || null
-  };
-
-  template.universeSelect.loading.set(true);
-
-  Meteor.call(optionsMethod, searchVal, function (err, res) {
-    var items = template.universeSelect.items.get() || [];
-    var items_selected = [];
-
-    _.each(items, function (item) {
-      if(values && _.indexOf(values, item.value) !== -1){
-        item.selected = true;
-        items_selected.push(item);
-      } else if(values === null && item.selected){
-        items_selected.push(item);
-      }
-    });
-
-    _.each(res, function (obj) {
-      if (_.find(items_selected, function (item) {
-          return item.value === obj.value;
-        })) {
-        return;
-      }
-
-      items_selected.push(_.extend({}, obj, {
-        selected: _.indexOf(values, obj.value) !== -1,
-        visible: true
-      }));
-    });
-
-    template.universeSelect.items.set(items_selected);
-    template.universeSelect.loading.set(false);
-    _setVisibleByValue(searchText, template);
-  });
-};
-
-
-var _scrollElementInView = function(element, parent, direction) {
-  const parentRect = parent[0].getBoundingClientRect();
-
-  switch(direction) {
-    case 'up':
-      if (element.prev()) {
-        let prevElement = element.prev().length === 1 ? element.prev() : element;
-
-        const prevElementRect = prevElement[0].getBoundingClientRect();
-        const prevElementOuterHeight = prevElement.outerHeight(true);
-
-        parent.scrollTop((prevElementRect.bottom - parentRect.top) - prevElementOuterHeight + parent.scrollTop());
-      }
-      break;
-    case 'down':
-      if (element.next()) {
-        let nextElement = element.next().length === 1 ? element.next() : element;
-
-        const nextElementRect = nextElement[0].getBoundingClientRect();
-        const nextElementOuterHeight = nextElement.outerHeight(true);
-
-        if (nextElementRect.bottom > parentRect.bottom) {
-          parent.scrollTop((nextElementRect.top - parentRect.bottom) + nextElementOuterHeight + parent.scrollTop());
-        }
-      }
-      break;
-  }
-};
