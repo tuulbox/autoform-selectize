@@ -301,15 +301,7 @@ Template.afUniverseSelect.helpers({
     return {value: this.value}
   },
   getItems: () => Template.instance().universeSelect.items.get(),
-  getItemsSelected: () => {
-    let items = [];
-
-    _.each(Template.instance().universeSelect.items.get(), (item) => {
-      item.selected ? items.push(item) : '';
-    });
-
-    return items;
-  },
+  getItemsSelected: () => Template.instance().universeSelect.items.get() ? Template.instance().universeSelect.items.get().filter(item => item.selected) : [],
   isLoading: () => Template.instance().universeSelect.loading.get(),
   getPlaceholder: () => Template.instance().data.atts.placeholder,
   isDisabled: () => Template.instance().data.atts.uniDisabled,
