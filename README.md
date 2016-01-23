@@ -1,20 +1,9 @@
-Universe autoform select
+autoform selectize
 =========================
 
 An add-on Meteor package for [aldeed:autoform](https://github.com/aldeed/meteor-autoform). Provides a single custom input type, "universe-select".
 
-<a href="http://unicms.io"><img src="http://unicms.io/banners/standalone.png" /></a>
-
-> This package is part of Universe, a framework based on [Meteor platform](http://meteor.com)
-maintained by [Vazco](http://www.vazco.eu).
-
-> It works standalone, but you can get max out of it when using the whole system.
-
-## Demo
-http://universe-autoform-select-demo.meteor.com
-
-https://github.com/vazco/meteor-universe-autoform-select-demo.git
-
+This package started off as a fork of [vazco:universe-autoform-select](https://github.com/vazco/meteor-universe-autoform-select) but has evolved a lot. It stays current with any chages there, but is now mostly `es6`, import if you wish `scss`, arrow up and down support with enter to select, custom templates for items in the dropdown with the `itemView` attribute in the `afFieldInput` object, and many bug fixes.
 
 ## Prerequisites
 
@@ -34,12 +23,6 @@ In a Meteor app directory, enter:
 $ meteor add tuul:autoform-selectize
 ```
 
-## For use without autoform
-
-Universe selectize standalone:
-
-https://github.com/vazco/meteor-universe-selectize/
-
 ## Usage
 
 Specify "universe-select" for the `type` attribute of any input. This can be done in a number of ways:
@@ -53,10 +36,11 @@ In the schema, which will then work with a `quickForm` or `afQuickFields`:
     autoform: {
       type: "universe-select",
       afFieldInput: {
-        multiple: true
-      }
-    }
-  }
+        multiple: true,
+        itemView: 'nameOfCustomeItemViewTemplate',
+      },
+    },
+  },
 }
 ```
 
@@ -65,7 +49,7 @@ Or on the `afFieldInput` component or any component that passes along attributes
 ```js
 {{> afQuickField name="tags" type="universe-select" multiple=true}}
 
-{{> afFormGroup name="tags" type="universe-select" multiple=true}}
+{{> afFormGroup name="tags" type="universe-select" multiple=true itemView='myCustomeDropDownItem'}}
 
 {{> afFieldInput name="tags" type="universe-select" multiple=true}}
 ```
@@ -111,6 +95,12 @@ If you enable autosave option in autoform, then it triggering after blur of univ
 		<td valign="top"><i>Optional.</i> </td>
 		<td valign="top"><code>Boolean</code></td>
 		<td valign="top"><code>false</code></td>
+	</tr>
+		<tr>
+		<td valign="top"><code>itemView</code></td>
+		<td valign="top">Custom template for both the dropDown item and then the item in the input. Pass in a name of a template you would like to use.</td>
+		<td valign="top"><code>string</code></td>
+		<td valign="top"><code>null</code></td>
 	</tr>
 	<tr>
         <td valign="top"><code>remove_button</code></td>
