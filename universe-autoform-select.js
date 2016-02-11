@@ -74,7 +74,7 @@ Template.afUniverseSelect.onCreated(() => {
       values = [values];
     }
 
-    _.each(items, function (item, key) {
+    _.each(items, (item, key) => {
       if (_.indexOf(values, item.value.toString()) !== -1) {
         item.selected = true;
       } else {
@@ -132,7 +132,7 @@ Template.afUniverseSelect.onCreated(() => {
     var items = template.universeSelect.items.get();
 
     _.each(items, function (item) {
-      if (item.label.search(new RegExp(value, 'i')) !== -1) {
+      if (typeof item.label === 'object' || item.label.search(new RegExp(value, 'i')) !== -1) {
         item.visible = true;
       } else {
         item.visible = false;
@@ -203,7 +203,9 @@ Template.afUniverseSelect.onCreated(() => {
         const prevElementRect = prevElement[0].getBoundingClientRect();
         const prevElementOuterHeight = prevElement.outerHeight(true);
 
-        parent.scrollTop((prevElementRect.bottom - parentRect.top) - prevElementOuterHeight + parent.scrollTop());
+        if (prevElementRect.top < parentRect.top) {
+          parent.scrollTop((prevElementRect.bottom - parentRect.top) - prevElementOuterHeight + parent.scrollTop());
+        }
       }
       break;
 
@@ -280,6 +282,11 @@ Template.afUniverseSelect.onRendered(() => {
     if (!_.isEqual($select.val(), values)) {
       Meteor.setTimeout(() => {
         $select.val(values);
+
+        if ($select.val() && template.data.atts.submit) {
+          $(template.data.atts.submit).submit();
+        }
+
       }, 0);
     }
 
@@ -296,7 +303,8 @@ Template.afUniverseSelect.onRendered(() => {
 
 
 Template.afUniverseSelect.helpers({
-  atts: () => _.omit(_.clone(Template.instance().data.atts), 'optionsMethodParams'),
+  atts: () => _.omit(_.clone(Template.instance().data.atts), ['optionsMethodParams', 'class']),
+  attsClass: () => Template.instance().data.atts.class,
   optionAtts() {
     return {value: this.value}
   },

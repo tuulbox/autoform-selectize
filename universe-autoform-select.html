@@ -1,5 +1,5 @@
 <template name="afUniverseSelect">
-  <div class="selectize-control universe-autoform-select {{atts.multipleClass}} {{atts.remove_button}} {{#if isLoading}}loading{{/if}}">
+  <div class="selectize-control universe-autoform-select {{attsClass}} {{atts.multipleClass}} {{atts.remove_button}} {{#if isLoading}}loading{{/if}}">
 
     <select {{atts}}>
       {{#each getItems}}
@@ -27,7 +27,7 @@
       <div class="selectize-dropdown-content">
         {{#each getItemsUnselected}}
           {{#if value}}
-            <div data-value={{value}} data-selectable class="option {{initial}}">
+            <div data-value={{value}} data-selectable class="option DropDown__Item {{initial}}">
               {{>Template.dynamic template=getLabelView data=this}}
             </div>
           {{else}}
