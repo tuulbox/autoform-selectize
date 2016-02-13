@@ -12,7 +12,7 @@
       <p class="selectize-label">{{atts.labels}}</p>
 
       {{#each getItemsSelected}}
-        <div data-value={{value}} class="item">
+        <div data-value={{value}} class="item DropDown__Item DropDown__Item--SelectizeOption">
           {{>Template.dynamic template=getLabelView data=this}}
           {{#if ../atts.remove_button}}
           <a href="#" class="remove" tabindex="-1" title="Remove">×</a>

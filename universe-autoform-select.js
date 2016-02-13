@@ -353,7 +353,7 @@ Template.afUniverseSelect.events({
     event.preventDefault();
     template.universeSelect.checkDisabled(template);
 
-    var $el = $(event.target);
+    var $el = $(event.currentTarget);
     var val = $el.attr('data-value');
     var values = template.universeSelect.values.get();
 
