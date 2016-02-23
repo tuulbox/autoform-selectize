@@ -56,6 +56,7 @@ Template.afUniverseSelect.onCreated(() => {
   universeSelect.loading = new ReactiveVar(false);
   universeSelect.hoveredItem = new ReactiveVar(null);
   universeSelect.value = new ReactiveVar('');
+  universeSelect.dropDownMaxHeight = new ReactiveVar();
 
 
   // Define all the functions this thing uses:
@@ -223,6 +224,16 @@ Template.afUniverseSelect.onCreated(() => {
       break;
     }
   };
+
+  universeSelect.openDropDown = (template) => {
+    $(template.find('.js-selectize-dropdown')).stop(true, true).addClass('is-active');
+
+    template.universeSelect.dropDownMaxHeight.set(window.innerHeight - template.$('.selectize-input')[0].getBoundingClientRect().bottom);
+  };
+
+  universeSelect.closeDropDown = (template) => {
+    template.$('.js-selectize-dropdown').stop(true, true).removeClass('is-active');
+  }
 });
 
 Template.afUniverseSelect.onRendered(() => {
@@ -305,7 +316,15 @@ Template.afUniverseSelect.onRendered(() => {
 Template.afUniverseSelect.helpers({
   atts: () => _.omit(_.clone(Template.instance().data.atts), ['optionsMethodParams', 'class']),
   attsClass: () => Template.instance().data.atts.class,
+  dropDownMaxHeight: () => {
+    let dropDownMaxHeight = Template.instance().universeSelect.dropDownMaxHeight.get()
+
+    if (dropDownMaxHeight < 200) {
+      return `${dropDownMaxHeight - 4}px`;
+    }
+  },
   optionAtts() {
+
     return {value: this.value}
   },
   getItems: () => Template.instance().universeSelect.items.get(),
@@ -349,7 +368,7 @@ Template.afUniverseSelect.events({
 
     template.universeSelect.saveValues(template, values);
   },
-  'mousedown .selectize-dropdown-content > div:not(.create), touchstart .selectize-dropdown-content > div:not(.create)' (event, template) {
+  'click .selectize-dropdown-content > div:not(.create)' (event, template) {
     event.preventDefault();
     template.universeSelect.checkDisabled(template);
 
@@ -372,7 +391,8 @@ Template.afUniverseSelect.events({
       $(template.find('input')).focus();
     }
 
-    template.$('.js-selectize-dropdown').stop(true, true).removeClass('is-active');
+
+    template.universeSelect.closeDropDown(template);
   },
   'click .selectize-input, click .selectize-label' (event, template) {
     template.universeSelect.checkDisabled(template);
@@ -383,8 +403,7 @@ Template.afUniverseSelect.events({
     template.universeSelect.getOptionsFromMethod($input.val(), null, template);
   },
   'keydown input' (event, template) {
-
-    $(template.find('.js-selectize-dropdown')).stop(true, true).addClass('is-active');
+    template.universeSelect.openDropDown(template);
 
     if (event.keyCode === 38 || event.keyCode === 40) {
       event.preventDefault();
@@ -498,7 +517,7 @@ Template.afUniverseSelect.events({
   'focus input' (event, template) {
     template.universeSelect.checkDisabled(template);
 
-    template.$('.js-selectize-dropdown').stop(true, true).addClass('is-active');
+    template.universeSelect.openDropDown(template);
     template.$('.selectize-input').addClass('focus input-active dropdown-active');
   },
   'change input' (event, template) {
@@ -516,7 +535,7 @@ Template.afUniverseSelect.events({
     $select.val(values);
     $select.change(); //save value on blur
 
-    template.$('.js-selectize-dropdown').stop(true, true).removeClass('is-active');
+    template.universeSelect.closeDropDown(template);
     template.$('.selectize-input').removeClass('focus input-active dropdown-active');
   },
   'click .create' (event, template) {

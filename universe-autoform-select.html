@@ -23,8 +23,8 @@
     </div>
 
 
-    <div class="selectize-dropdown js-selectize-dropdown">
-      <div class="selectize-dropdown-content">
+    <div class="selectize-dropdown js-selectize-dropdown" style="max-height: {{dropDownMaxHeight}};">
+      <div class="selectize-dropdown-content" style="max-height: {{dropDownMaxHeight}};">
         {{#each getItemsUnselected}}
           {{#if value}}
             <div data-value={{value}} data-selectable class="option DropDown__Item {{initial}}">
