@@ -478,7 +478,7 @@ Template.afUniverseSelect.events({
         if ($input.val() === '') {
           break;
         } else if (activeElement.length >= 1) {
-          activeElement.trigger('mousedown');
+          activeElement.trigger('click');
           break;
         }
 
