@@ -368,8 +368,9 @@ Template.afUniverseSelect.events({
 
     template.universeSelect.saveValues(template, values);
   },
-  'click .selectize-dropdown-content > div:not(.create)' (event, template) {
+  'click [data-action=selectizeDropDownItem]' (event, template) {
     event.preventDefault();
+    event.stopPropagation();
     template.universeSelect.checkDisabled(template);
 
     var $el = $(event.currentTarget);

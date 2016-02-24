@@ -27,7 +27,7 @@
       <div class="selectize-dropdown-content" style="max-height: {{dropDownMaxHeight}};">
         {{#each getItemsUnselected}}
           {{#if value}}
-            <div data-value={{value}} data-selectable class="option DropDown__Item {{initial}}">
+            <div data-value={{value}} data-selectable class="option DropDown__Item {{initial}}" data-action="selectizeDropDownItem">
               {{>Template.dynamic template=getLabelView data=this}}
             </div>
           {{else}}
